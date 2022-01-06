@@ -11,36 +11,15 @@ namespace WebApplication1.Controllers.api
 {
     public class TeacherController : ApiController
     {
-        string string_Connection = "Data Source=LAPTOP-HG30JHU1;Initial Catalog=CollegeDB;Integrated Security=True;Pooling=False";
-
+        static string string_Connection = "Data Source=LAPTOP-HG30JHU1;Initial Catalog=CollegeDB;Integrated Security=True;Pooling=False";
+        DataClasses1DataContext dataContex = new DataClasses1DataContext(string_Connection);
         //GET: api/Teacher
         public IHttpActionResult Get()
         {
-            List<Teacher> teacherList = new List<Teacher>();
             try
             {
-                using (SqlConnection connection = new SqlConnection(string_Connection))
-                {
-                    connection.Open();
-                    string query = "SELECT * FROM Teacher";
-                    SqlCommand cmd = new SqlCommand(query, connection);
-                    SqlDataReader dataFromDB = cmd.ExecuteReader();
-                    if (dataFromDB.HasRows)
-                    {
-                        while (dataFromDB.Read())
-                        {
-                            teacherList.Add(new Teacher(dataFromDB.GetString(1), dataFromDB.GetString(2), dataFromDB.GetString(3), dataFromDB.GetString(4), dataFromDB.GetInt32(5)));
-                        }
-                        connection.Close();
-                        return Ok(new { teacherList });
-                    }
-                    else
-                    {
-                        string empty = "there is no data in data base";
-                        connection.Close();
-                        return Ok(new { empty });
-                    }
-                }
+                List<Teacher> list = dataContex.Teachers.ToList();
+                return Ok(new { list });
             }
             catch (SqlException ex)
             {
@@ -57,28 +36,8 @@ namespace WebApplication1.Controllers.api
         {
             try
             {
-                using (SqlConnection connection = new SqlConnection(string_Connection))
-                {
-                    connection.Open();
-                    string query = $@"SELECT * FROM Teacher WHERE Id = {id}";
-                    SqlCommand cmd = new SqlCommand(query, connection);
-                    SqlDataReader dataFromDB = cmd.ExecuteReader();
-                    if (dataFromDB.HasRows)
-                    {
-                        while (dataFromDB.Read())
-                        {
-                            Teacher obj = new Teacher(dataFromDB.GetString(1), dataFromDB.GetString(2), dataFromDB.GetString(3), dataFromDB.GetString(4), dataFromDB.GetInt32(5));
-                            connection.Close();
-                            return Ok(new { obj });
-                        }
-                    }
-                    else
-                    {
-                        string empty = "there is no such as id in data base";
-                        connection.Close();
-                        return Ok(new { empty });
-                    }
-                }
+                Teacher obj = dataContex.Teachers.First(item => item.Id == id);
+                return Ok(new{obj});
             }
             catch (SqlException ex)
             {
@@ -96,30 +55,9 @@ namespace WebApplication1.Controllers.api
         {
             try
             {
-                using (SqlConnection connection = new SqlConnection(string_Connection))
-                {
-                    connection.Open();
-                    string query = $@"INSERT INTO Teacher (firstName,lastName,sectionStudy,email,payment) VALUES ('{value.FirstName}','{value.LastName}','{value.SectionStudy}','{value.Email}','{value.Payment}')";
-                    SqlCommand cmd = new SqlCommand(query, connection);
-                    int rowEffected = cmd.ExecuteNonQuery();
-                    
-                    if (rowEffected == 1)
-                    {
-                       return Get();
-                    }
-                    else if(rowEffected == 0)
-                    {
-                        string empty = "nothing added to data base";
-                        connection.Close();
-                        return Ok(new { empty });
-                    }
-                    else
-                    {
-                        string problem = "too many rows effected ";
-                        connection.Close();
-                        return Ok(new { problem });
-                    }
-                }
+                dataContex.Teachers.InsertOnSubmit(value);
+                dataContex.SubmitChanges();
+                return Get();
             }
             catch (SqlException ex)
             {
@@ -136,35 +74,20 @@ namespace WebApplication1.Controllers.api
         {
             try
             {
-                using(SqlConnection connection = new SqlConnection(string_Connection))
-                {
-                    connection.Open();
-                    string query = $@"UPDATE Teacher SET firstName = '{value.FirstName}', lastName = '{value.LastName}', sectionStudy = '{value.SectionStudy}', email = '{value.Email}', payment = { value.Payment } WHERE Id = { id }";
-                    SqlCommand cmd = new SqlCommand(query,connection);
-                    int rowEffected = cmd.ExecuteNonQuery();
-                    if (rowEffected == 1)
-                    {
-                        return Get();
-                    }
-                    else if(rowEffected == 0)
-                    {
-                        string empty = "nothing added to data base";
-                        connection.Close();
-                        return Ok(new { empty });
-                    }
-                    else
-                    {
-                        string problem = "too many rows effected .nothing changed!";
-                        connection.Close();
-                        return Ok(new { problem });
-                    }
-                }
+                Teacher someObj = dataContex.Teachers.First((item) => item.Id == id);
+                someObj.firstName = value.firstName;
+                someObj.lastName = value.lastName;
+                someObj.sectionStudy = value.sectionStudy;
+                someObj.email = value.email;
+                someObj.payment = value.payment;
+                return Get();
+                
             }
-            catch(SqlException ex)
+            catch (SqlException ex)
             {
                 return BadRequest(ex.Message);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -175,35 +98,15 @@ namespace WebApplication1.Controllers.api
         {
             try
             {
-                using (SqlConnection connection = new SqlConnection(string_Connection))
-                {
-                    connection.Open();
-                    string query = $@"DELETE FROM Teacher WHERE Id = {id}";
-                    SqlCommand cmd = new SqlCommand(query, connection);
-                    int rowEffected = cmd.ExecuteNonQuery();
-                    if (rowEffected == 1)
-                    {
-                        return Get();
-                    }
-                    else if (rowEffected == 0)
-                    {
-                        string empty = "nothing delete from data base";
-                        connection.Close();
-                        return Ok(new { empty });
-                    }
-                    else
-                    {
-                        string problem = "too many rows effected ";
-                        connection.Close();
-                        return Ok(new { problem });
-                    }
-                }
+                dataContex.Teachers.DeleteOnSubmit(dataContex.Teachers.First(item => item.Id == id));
+                dataContex.SubmitChanges();
+                return Get();
             }
             catch (SqlException ex)
             {
                 return BadRequest(ex.Message);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
